@@ -1,0 +1,25 @@
+data:
+  raw_data: "./artefacts/HousingData.csv"
+  train_data_save_path: "./artefacts/train_data.csv"
+  test_data_save_path: "./artefacts/test_data.csv"
+  val_data_save_path: "./artefacts/val_data.csv"
+  label_col: "price"
+  categoric_cols: ["mainroad", "guestroom", "basement", "hotwaterheating",
+                   "airconditioning", "prefarea", "furnishingstatus"]
+  numeric_cols: ["area", "bedrooms", "bathrooms", "stories", "parking"]
+  preprocessor_path: "./artefacts/preprocessor.joblib"
+
+model:
+  model_name: "house_price-regression"
+  save_path: "./artefacts/"
+  train_batch_size: 64
+  test_batch_size: 64
+  n_epochs: 1000
+  learning_rate: 0.01
+  es_patience: 10
+  es_delta: 0
+  use_gpu: True
+
+mlflow:
+  tracking_uri: "http://localhost:8080"
+  expt_name: "Test-2"
