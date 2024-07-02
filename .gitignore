@@ -15,7 +15,6 @@ __pycache__/
 .DS_Store
 .python-version
 poetry.toml
-poetry.lock
 *.pth
 
 # C extensions

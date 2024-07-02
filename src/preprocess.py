@@ -1,5 +1,7 @@
 """Data split, preprocess and other data utilities."""
 
+import os
+
 import joblib
 import pandas as pd
 import torch
@@ -15,7 +17,9 @@ def load_and_split_data(config: dict, seed: int = 42) -> None:
     """Load a single data source and split it into train, test and val."""
     test_size = 0.2
     val_size = 0.2
-    data = pd.read_csv(config["data"]["raw_data"])
+    # read raw data file path from environment variable
+    raw_data_path = os.getenv("DATA_PATH", config["data"]["raw_data"])
+    data = pd.read_csv(raw_data_path)
 
     # Split features(X) and target(y) variable
     label_column = config["data"]["label_col"]

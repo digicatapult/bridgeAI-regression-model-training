@@ -34,7 +34,7 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
         log_record["levelname"] = record.levelname
 
 
-def setup_logger(log_file="app.log.json"):
+def setup_logger(log_file="./artefacts/app.log.json"):
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
 
