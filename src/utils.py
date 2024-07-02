@@ -1,6 +1,7 @@
 """Utility functions."""
 
 import logging
+import sys
 
 import yaml
 from pythonjsonlogger import jsonlogger
@@ -17,15 +18,10 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
     """Custom log formatter."""
 
     def add_fields(self, log_record, record, message_dict):
-        """Adding statndard fileds for logging.
-
-        #TODO: remove unwanted fields and add if anything needed
-        """
+        """Adding statndard fileds for logging."""
         super(CustomJsonFormatter, self).add_fields(
             log_record, record, message_dict
         )
-        # log_record['thread'] = record.thread
-        # log_record['process'] = record.process
         log_record["module"] = record.module
         log_record["funcName"] = record.funcName
         log_record["pathname"] = record.pathname
@@ -34,17 +30,17 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
         log_record["levelname"] = record.levelname
 
 
-def setup_logger(log_file="./artefacts/app.log.json"):
+def setup_logger():
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
 
-    # Create a file handler to log to a file
-    file_handler = logging.FileHandler(log_file)
+    # Create a stream handler to log to stdout
+    stream_handler = logging.StreamHandler(sys.stdout)
     formatter = CustomJsonFormatter("%(asctime)s %(message)s")
-    file_handler.setFormatter(formatter)
+    stream_handler.setFormatter(formatter)
 
     if not logger.handlers:
-        logger.addHandler(file_handler)
+        logger.addHandler(stream_handler)
 
     return logger
 
