@@ -7,9 +7,9 @@ from pathlib import Path
 import torch
 from torch import nn
 
-from evaluate import evaluate
-from model import EarlyStopping, save_model
-from utils import logger
+from src.evaluate import evaluate
+from src.model import EarlyStopping, save_model
+from src.utils import logger
 
 
 def train(

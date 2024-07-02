@@ -2,11 +2,11 @@
 
 import joblib
 
-import utils
-from model import NNModel
-from preprocess import create_dataloader, load_and_split_data, preprocess
-from train import train
-from utils import logger
+from src import utils
+from src.model import NNModel
+from src.preprocess import create_dataloader, load_and_split_data, preprocess
+from src.train import train
+from src.utils import logger
 
 
 def main():
