@@ -21,7 +21,7 @@ def mock_config():
             "test_data_save_path": "test.csv",
             "preprocessor_path": "preprocessor.joblib",
             "numeric_cols": ["num1", "num2"],
-            "categoric_cols": ["cat1", "cat2"],
+            "categorical_cols": ["cat1", "cat2"],
         }
     }
 

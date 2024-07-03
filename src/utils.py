@@ -1,14 +1,16 @@
 """Utility functions."""
 
 import logging
+import os
 import sys
 
 import yaml
 from pythonjsonlogger import jsonlogger
 
 
-def load_yaml_config(config_path: str = "./config.yaml"):
+def load_yaml_config(config_path: str):
     """Load the json configuration."""
+    config_path = os.getenv("CONFIG_PATH", "./config.yaml")
     with open(config_path, "r") as config_file:
         config = yaml.safe_load(config_file)
     return config
@@ -18,7 +20,7 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
     """Custom log formatter."""
 
     def add_fields(self, log_record, record, message_dict):
-        """Adding statndard fileds for logging."""
+        """Adding standard filed for logging."""
         super(CustomJsonFormatter, self).add_fields(
             log_record, record, message_dict
         )
@@ -32,7 +34,10 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
 
 def setup_logger():
     logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
+    log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+
+    # set the logging level to info if the provided one is invalid
+    logger.setLevel(getattr(logging, log_level, logging.INFO))
 
     # Create a stream handler to log to stdout
     stream_handler = logging.StreamHandler(sys.stdout)

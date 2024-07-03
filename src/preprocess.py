@@ -60,7 +60,7 @@ def preprocess(
     # Define the target, numerical and categorical features
     label_col = config["data"]["label_col"]
     numeric_features = config["data"]["numeric_cols"]
-    categorical_features = config["data"]["categoric_cols"]
+    categorical_features = config["data"]["categorical_cols"]
 
     # defining labels and features
     labels = data[label_col].values

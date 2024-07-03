@@ -27,8 +27,13 @@ RUN mkdir artefacts
 # Add source directory to python path
 ENV PYTHONPATH "${PYTHONPATH}:/app/src"
 
-# Set the environment variable for the raw data path
+# Set the environment variable
+# raw data path
 ENV DATA_PATH=/app/artefacts/HousingData.csv
+# config path
+ENV CONFIG_PATH=./config.yaml
+# log level
+ENV LOG_LEVEL=INFO
 
 # Run the application
 CMD ["poetry", "run", "python", "src/main.py"]

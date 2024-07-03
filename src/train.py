@@ -22,11 +22,11 @@ def train(
 ):
     """Train the model on the training data set.
 
-    Stps involved here:
+    Steps involved here:
         1. Define the model training criteria, optimiser, early stopper, etc
         2. Train the model for given number of epochs using train data
         3. At the end of each epoch, validate the model using validation data
-        4. Repeat the training untill epochs are completed or early stopping
+        4. Repeat the training until epochs are completed or early stopping
             criteria is met
         5. Save the best model
         7. At the end of training do a test on test data and log the results
