@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "bridgeai-regression-model-training"
 version = "0.1.0"
-description = "A basic containarised regression model training setup"
+description = "A basic containerised regression model training setup"
 authors = ["Your Name <you@example.com>"]
 readme = "README.md"
 packages = [{include = "bridgeai_regression_model_training"}]
