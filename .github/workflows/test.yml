@@ -2,7 +2,7 @@ name: Lint and Test
 
 on:
   push:
-    branches-ignore: ["main"] #doubt
+    branches-ignore: ["main"]
 
 jobs:
   repo_ids:
