@@ -19,7 +19,7 @@ jobs:
       - name: Check token
         run: |
           if [ -z "${{ secrets.GITHUB_TOKEN }}"]; then 
-            echo "Must provide a GITHUB_TOKEN secret in order to run release workflow" #doubt
+            echo "Must provide a GITHUB_TOKEN secret in order to run release workflow"
             exit 1
           fi
       - name: Get repository identifiers
