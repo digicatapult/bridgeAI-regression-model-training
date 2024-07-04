@@ -4,7 +4,6 @@ version = "0.1.0"
 description = "A basic containerised regression model training setup"
 authors = ["DC AI Team <opensource@digicatapult.org.uk>"]
 readme = "README.md"
-packages = [{include = "bridgeai_regression_model_training"}]
 
 [tool.poetry.dependencies]
 python = "^3.12"
