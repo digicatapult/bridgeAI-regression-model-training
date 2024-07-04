@@ -73,7 +73,7 @@ jobs:
     name: "Build docker image"
     runs-on: ubuntu-latest
     permissions: write-all
-    needs: [repo_ids, tests]
+    needs: [repo_ids, lint, tests]
     steps:
       - uses: actions/checkout@v4
       - name: Setup QEMU
