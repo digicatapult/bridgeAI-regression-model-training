@@ -83,7 +83,7 @@ jobs:
   publish:
     name: "Publish package"
     needs: [preconditions, lint, tests, check-version]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-m
     permissions: write-all
     if: ${{ needs.check-version.outputs.is_new_version == 'true' }}
 
