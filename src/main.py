@@ -1,8 +1,11 @@
 """Main training pipeline."""
 
-import joblib
+import os
 
-from src import utils
+import joblib
+import mlflow
+
+from src import mlflow_utils, utils
 from src.model import NNModel
 from src.preprocess import create_dataloader, load_and_split_data, preprocess
 from src.train import train
@@ -71,17 +74,38 @@ def main():
     # 5. Create/Initialise a model object
     regression_model = NNModel(in_feats=train_x.shape[1])
 
-    # 6. Train the model and save/log the results
-    logger.info("starting the training.")
-    train(
-        regression_model,
-        train_dataloader,
-        val_dataloader,
-        test_dataloader,
-        config,
-        verbose=True,
+    # 6. start MLFLow run and log the parameters
+    mlflow_tracking_uri = os.getenv(
+        "MLFLOW_TRACKING_URI", config["mlflow"]["tracking_uri"]
     )
-    logger.info("Training completed.")
+    mlflow_utils.start_run(mlflow_tracking_uri, config["mlflow"]["expt_name"])
+    run_id = mlflow_utils.get_activ_run_id()
+    logger.info(f"started MLFlow run with run id: {run_id}")
+    mlflow_utils.log_param_dict(mlflow_utils.flatten_dict(config))
+
+    # 7. Train the model with metric logging
+    logger.info("starting the training.")
+    try:
+        # Set the active run to the previously started run
+        with mlflow.start_run(run_id=run_id, nested=True):
+            train(
+                regression_model,
+                train_dataloader,
+                val_dataloader,
+                test_dataloader,
+                config,
+                verbose=True,
+            )
+            logger.info("Training completed.")
+    except Exception as err:
+        mlflow.end_run("FAILED")
+        mlflow.log_param("error", err)
+        logger.info(f"Training task failed with error - {err}")
+        raise Exception(err)
+    else:
+        # 8. Ensure the MLFlow run has ended properly
+        if mlflow.active_run():
+            mlflow.end_run("FINISHED")
 
 
 if __name__ == "__main__":
