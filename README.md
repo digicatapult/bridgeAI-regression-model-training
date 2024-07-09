@@ -22,11 +22,12 @@ or in the environment variable `DATA_PATH`
 
 The following environment variables can be set to configure the training:
 
-| Variable   | Default Value                 | Description                                                                                                  |
-|------------|-------------------------------|--------------------------------------------------------------------------------------------------------------|
-| DATA_PATH  | `./artefacts/HousingData.csv` | File path to the raw data CSV data used for training                                                         |
-| CONFIG_PATH| `./config.yaml`               | File path to the model training and other configuration file                                                 |
-| LOG_LEVEL  | `INFO`                        | The logging level for the application. Valid values are `DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`. |
+| Variable            | Default Value                  | Description                                                                                                  |
+|---------------------|--------------------------------|--------------------------------------------------------------------------------------------------------------|
+| DATA_PATH           | `./artefacts/HousingData.csv`  | File path to the raw data CSV data used for training                                                         |
+| CONFIG_PATH         | `./config.yaml`                | File path to the model training and other configuration file                                                 |
+| LOG_LEVEL           | `INFO`                         | The logging level for the application. Valid values are `DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`. |
+| MLFLOW_TRACKING_URI | `http://localhost:8080`        | MLFlow tracking URI                                                                                          |
 
 
 ### Running the tests
