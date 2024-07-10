@@ -64,6 +64,8 @@ def train(
     # Training for given number of epochs
     n_epochs = config["model"]["n_epochs"]
     # Training loop
+    train_loss = 0.0
+    val_loss = 0.0
     for epoch in range(1, n_epochs + 1):
         model.train()
         train_loss = 0.0
