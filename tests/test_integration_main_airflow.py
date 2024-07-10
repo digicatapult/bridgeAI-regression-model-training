@@ -92,6 +92,7 @@ def test_training_logs_to_mlflow(
             "-f",
             DOCKER_COMPOSE_FILE,
             "exec",
+            "-T",
             "training",
             "poetry",
             "run",
