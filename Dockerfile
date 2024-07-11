@@ -35,7 +35,7 @@ ENV CONFIG_PATH=./config.yaml
 # log level
 ENV LOG_LEVEL=INFO
 # MLFlow tracking uri
-ENV MLFLOW_TRACKING_URI="http://localhost:8080"
+ENV MLFLOW_TRACKING_URI="http://localhost:5000"
 
 # Run the application
 CMD ["poetry", "run", "python", "src/main.py"]

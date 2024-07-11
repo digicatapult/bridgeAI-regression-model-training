@@ -2,7 +2,10 @@
 
 from unittest.mock import MagicMock, patch
 
+import mlflow
+import requests
 import torch
+from mlflow.tracking import MlflowClient
 from torch.utils.data import DataLoader, TensorDataset
 
 from src.main import main
@@ -39,7 +42,8 @@ def test_main(
 ):
     # Setup mock return values
     mlflow_uri = "http://localhost:5000"
-    expt_name = "test_expt"
+    expt_name = "test-expt"
+    model_name = "test-model"
 
     mock_load_yaml_config.return_value = {
         "data": {
@@ -87,3 +91,37 @@ def test_main(
 
     # call main with the mocks
     main()
+
+    # check if experiment is logged
+    mlflow.set_tracking_uri(mlflow_uri)
+    experiment = mlflow.get_experiment(experiment_id="0")
+    assert experiment is not None
+
+    runs = mlflow.search_runs(search_all_experiments=True)
+    assert len(runs) > 1
+
+    # 1. Check if the MLFlow connection worked as expected
+    # Check the status of the run
+    run_id = runs["run_id"][0]
+    run_data = requests.get(
+        f"{mlflow_uri}/api/2.0/mlflow/runs/get?run_id={run_id}"
+    ).json()
+    assert run_data["run"]["info"]["status"] == "FINISHED"
+
+    # 2. Check if parameters are logged
+    expected_param = {"key": "mlflow.expt_name", "value": expt_name}
+    assert expected_param in run_data["run"]["data"]["params"]
+
+    # 3. Check the reported test_loss metrics is present
+    assert len(run_data["run"]["data"]["metrics"]) > 0
+
+    # 4. Check if the model is registered properly
+    client = MlflowClient()
+
+    # Check the latest version of the model
+    registered_model = dict(
+        client.search_model_versions(f"name='{model_name}'")[0]
+    )
+    assert registered_model["name"] == model_name
+    assert int(registered_model["version"]) >= 1
+    assert registered_model["status"] == "READY"
