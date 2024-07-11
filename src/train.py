@@ -4,9 +4,11 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+import mlflow
 import torch
 from torch import nn
 
+from src import mlflow_utils
 from src.evaluate import evaluate
 from src.model import EarlyStopping, save_model
 from src.utils import logger
@@ -62,6 +64,8 @@ def train(
     # Training for given number of epochs
     n_epochs = config["model"]["n_epochs"]
     # Training loop
+    train_loss = 0.0
+    val_loss = 0.0
     for epoch in range(1, n_epochs + 1):
         model.train()
         train_loss = 0.0
@@ -82,6 +86,10 @@ def train(
         # Update early stopping details
         early_stopper(val_loss, model)
 
+        # Update the metrics to mlflow
+        mlflow.log_metric("train_loss", train_loss.item(), step=epoch)
+        mlflow.log_metric("val_loss", val_loss, step=epoch)
+
         # log the metrics to console
         if verbose:
             sys.stdout.write(
@@ -90,10 +98,8 @@ def train(
             )
             sys.stdout.flush()
 
-        # Early stop teh training if no model improvements observed
+        # Early stop the training if no model improvements observed
         if early_stopper.early_stop:
-            if verbose:
-                print("\nEarly stopping...")
             logger.info("Early stopping...")
             # Save the best model
             save_model(early_stopper.best_model, model_save_path)
@@ -102,8 +108,21 @@ def train(
         f"End of training metrics: Train Loss: {train_loss: .4f}, "
         f"Val Loss: {val_loss: .4f}"
     )
+
     # Evaluate on unseen test data at the end of training
     test_loss = evaluate(model, criterion, testloader, device=device)
+    # Log the test loss to mlflow;
+    mlflow.log_metric(
+        "test_loss",
+        test_loss,
+    )
     logger.info(f"Test Loss: {test_loss: .4f}")
-    if verbose:
-        print(f"\nTest Loss: {test_loss: .4f}")
+
+    # Register the model in the MLFlow registry
+    model_uri = mlflow_utils.log_torch_model(
+        model,
+        valloader,
+        mlflow.active_run(),
+        config["model"]["model_name"],
+    )
+    logger.info(f"Model registered in MLFlow. uri - {model_uri}")

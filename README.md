@@ -15,23 +15,27 @@ or in the environment variable `DATA_PATH`
 
 ### Model training - using docker
 1. Build the docker image - `docker build -t regression .`
-2. Run the container with the correct `DATA_PATH` as environment variable `docker run -e DATA_PATH=/app/artefacts/HousingData.csv -v ./artefacts:/app/artefacts --rm regression`
+2. Bring up the dependencies by using `docker-compose up -d`
+3. Run the container with the correct `DATA_PATH` and `MLFLOW_TRACKING_URI` as environment variables.
+   (Refer to the following [Environment Variables](#environment-variables) table for complete list)\
+   `docker run -e DATA_PATH=/app/artefacts/HousingData.csv -e MLFLOW_TRACKING_URI=http://host.docker.internal:5000 -v ./artefacts:/app/artefacts --rm regression`
 
 
 ### Environment Variables
 
 The following environment variables can be set to configure the training:
 
-| Variable   | Default Value                 | Description                                                                                                  |
-|------------|-------------------------------|--------------------------------------------------------------------------------------------------------------|
-| DATA_PATH  | `./artefacts/HousingData.csv` | File path to the raw data CSV data used for training                                                         |
-| CONFIG_PATH| `./config.yaml`               | File path to the model training and other configuration file                                                 |
-| LOG_LEVEL  | `INFO`                        | The logging level for the application. Valid values are `DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`. |
+| Variable            | Default Value                 | Description                                                                                                   |
+|---------------------|-------------------------------|---------------------------------------------------------------------------------------------------------------|
+| DATA_PATH           | `./artefacts/HousingData.csv` | File path to the raw data CSV data used for training                                                          |
+| CONFIG_PATH         | `./config.yaml`               | File path to the model training and other configuration file                                                  |
+| LOG_LEVEL           | `INFO`                        | The logging level for the application. Valid values are `DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`.  |
+| MLFLOW_TRACKING_URI | `http://localhost:5000`       | MLFlow tracking URI. Use `http://host.docker.internal:5000` if the MLFlow is running within docker container. |
 
 
 ### Running the tests
 
 Ensure that you have the project requirements already set up by following the [Model training](#model-training) instructions
-
 - Ensure `pytest` is installed. `poetry install` will install it as a dev dependency.
+- - For integration tests, set up the dependencies (MLFlow) by running, `docker-compose up -d`
 - Run the tests with `poetry run pytest ./tests`

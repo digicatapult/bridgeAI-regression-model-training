@@ -21,5 +21,5 @@ model:   # model related parameters and hyperparameters
   use_gpu: True   # to use gpu or not. If no gpu found, will fall back to cpu with warning
 
 mlflow:  # for mlflow logging
-  tracking_uri: "http://localhost:8080"   # MLFlow tracking uri
-  expt_name: "Test-2"   # Experiment name under which the model trainings will be listed in MLFlow
+  tracking_uri: "http://localhost:5000"   # MLFlow tracking uri. Use http://host.docker.internal:5000 if the MLFlow is running in a docker container
+  expt_name: "expt-name"   # Experiment name under which the model trainings will be listed in MLFlow

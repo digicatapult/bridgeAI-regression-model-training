@@ -5,6 +5,8 @@ from unittest.mock import MagicMock, patch
 from src.main import main
 
 
+@patch("src.main.mlflow_utils")
+@patch("src.main.mlflow")
 @patch("src.main.utils.load_yaml_config")
 @patch("src.main.load_and_split_data")
 @patch("src.main.preprocess")
@@ -20,6 +22,8 @@ def test_main(
     mock_preprocess,
     mock_load_and_split_data,
     mock_load_yaml_config,
+    mock_mlflow,
+    mock_mlflow_utils,
 ):
     # Setup mock return values
     mock_load_yaml_config.return_value = {
@@ -31,6 +35,7 @@ def test_main(
             "preprocessor_path": "preprocessor.joblib",
         },
         "model": {"train_batch_size": 16, "test_batch_size": 32},
+        "mlflow": {"tracking_uri": "tracking_uri", "expt_name": "test_name"},
     }
     mock_load_and_split_data.return_value = None
     mock_preprocess.side_effect = [
@@ -46,6 +51,9 @@ def test_main(
     # train_dataloader, val_dataloader, test_dataloader
     mock_joblib_load.return_value = MagicMock()
     mock_NNModel.return_value = MagicMock()
+
+    mock_mlflow_utils.return_value = MagicMock()
+    mock_mlflow.return_value = MagicMock()
 
     # call main with the mocks
     main()
