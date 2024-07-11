@@ -4,6 +4,7 @@ version = "0.1.1"
 description = "A basic containerised regression model training setup"
 authors = ["DC AI Team <opensource@digicatapult.org.uk>"]
 readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.12"
