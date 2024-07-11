@@ -2,7 +2,6 @@
 
 import subprocess
 import time
-from unittest.mock import MagicMock, patch
 
 import mlflow
 import pytest
@@ -31,20 +30,7 @@ def setup_teardown():
     )
 
 
-@patch("src.main.load_and_split_data")
-@patch("src.main.preprocess")
-@patch("src.main.create_dataloader")
-@patch("src.main.joblib.load")
-@patch("src.main.NNModel")
-@patch("src.main.utils.load_yaml_config")
-def test_training_logs_to_mlflow(
-    mock_config,
-    mock_NNModel,
-    mock_joblib_load,
-    mock_create_dataloader,
-    mock_preprocess,
-    mock_load_and_split_data,
-):
+def test_training_logs_to_mlflow():
     """Integration test for airflow.
 
     This function tests:
@@ -56,35 +42,6 @@ def test_training_logs_to_mlflow(
     mlflow_uri = "http://localhost:5000"
     expt_name = "test_expt"
     model_name = "test-model"
-    mock_config.return_value = {
-        "data": {
-            "raw_data": "data.csv",
-            "train_data_save_path": "train.csv",
-            "val_data_save_path": "val.csv",
-            "test_data_save_path": "test.csv",
-            "preprocessor_path": "preprocessor.joblib",
-        },
-        "model": {
-            "model_name": model_name,
-            "train_batch_size": 4,
-            "test_batch_size": 4,
-        },
-        "mlflow": {"tracking_uri": mlflow_uri, "expt_name": expt_name},
-    }
-    mock_load_and_split_data.return_value = MagicMock()
-    mock_preprocess.side_effect = [
-        (MagicMock(), MagicMock()),  # train_x, train_y
-        (MagicMock(), MagicMock()),  # val_x, val_y
-        (MagicMock(), MagicMock()),  # test_x, test_y
-    ]
-    mock_create_dataloader.side_effect = [
-        MagicMock(),
-        MagicMock(),
-        MagicMock(),
-    ]
-    # train_dataloader, val_dataloader, test_dataloader
-    mock_joblib_load.return_value = MagicMock()
-    mock_NNModel.return_value = MagicMock()
 
     result = subprocess.run(
         [
