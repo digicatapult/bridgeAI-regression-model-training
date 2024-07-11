@@ -33,6 +33,6 @@ The following environment variables can be set to configure the training:
 ### Running the tests
 
 Ensure that you have the project requirements already set up by following the [Model training](#model-training) instructions
-
 - Ensure `pytest` is installed. `poetry install` will install it as a dev dependency.
+- - For integration tests, set up the dependencies (MLFlow) by running, `docker-compose up -d`
 - Run the tests with `poetry run pytest ./tests`
