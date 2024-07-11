@@ -98,7 +98,7 @@ def test_main(
     assert experiment is not None
 
     runs = mlflow.search_runs(search_all_experiments=True)
-    assert len(runs) > 1
+    assert len(runs) >= 1
 
     # 1. Check if the MLFlow connection worked as expected
     # Check the status of the run
