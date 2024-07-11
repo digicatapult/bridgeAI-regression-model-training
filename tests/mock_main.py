@@ -1,4 +1,4 @@
-"""Dummy mocked main for airflow integration test."""
+"""Dummy mocked main for MLFlow integration test."""
 
 from unittest.mock import MagicMock, patch
 

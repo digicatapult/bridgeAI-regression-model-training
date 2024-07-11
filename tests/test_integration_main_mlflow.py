@@ -1,4 +1,4 @@
-"""Integration test for airflow logging."""
+"""Integration test for mlflow logging."""
 
 import subprocess
 import time
@@ -8,7 +8,7 @@ import pytest
 import requests
 from mlflow.tracking import MlflowClient
 
-DOCKER_COMPOSE_FILE = "./tests/docker-compose-integration-test-airflow.yaml"
+DOCKER_COMPOSE_FILE = "./tests/docker-compose-integration-test-mlflow.yaml"
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -31,10 +31,10 @@ def setup_teardown():
 
 
 def test_training_logs_to_mlflow():
-    """Integration test for airflow.
+    """Integration test for mlflow.
 
     This function tests:
-        1. The integration to airflow
+        1. The integration to mlflow
         2. Logging of parameters
         3. Logging of metrics
         4. Logging of model and registering in MLFlow registry

@@ -1,4 +1,4 @@
-# ./tests/docker-compose-integration-test-airflow.yaml
+# ./tests/docker-compose-integration-test-mlflow.yaml
 
 services:
   mlflow:
