@@ -28,3 +28,4 @@ dvc:
   train_data_path: "./artefacts/train_data.csv"  # Path of the train split of the data pulled from dvc
   test_data_path: "./artefacts/test_data.csv"   # Path of the test split of the data pulled from dvc
   val_data_path: "./artefacts/val_data.csv"   # Path of the validation split of the data pulled from dvc
+
