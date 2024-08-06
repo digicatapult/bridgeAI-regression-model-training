@@ -4,11 +4,12 @@ import logging
 import os
 import sys
 
+import torch
 import yaml
 from pythonjsonlogger import jsonlogger
 
 
-def load_yaml_config(config_path: str):
+def load_yaml_config():
     """Load the json configuration."""
     config_path = os.getenv("CONFIG_PATH", "./config.yaml")
     with open(config_path, "r") as config_file:
@@ -52,3 +53,16 @@ def setup_logger():
 
 # Initialized logger
 logger = setup_logger()
+
+
+def get_device(config):
+    """Get the device for model training or evaluation."""
+    if config["model"]["use_gpu"]:
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+        else:
+            device = torch.device("cpu")
+            logger.warn("Falling back to 'CPU'; no usable 'GPU' found!")
+    else:
+        device = torch.device("cpu")
+    return device

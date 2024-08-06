@@ -1,0 +1,94 @@
+"""Fetch the data from featurestore."""
+
+import os
+import shutil
+
+from dvc.cli import main as dvc_main
+from git import GitCommandError, Repo
+
+from src import utils
+from src.utils import logger
+
+
+def checkout_data(repo, config):
+    """Checkout to the data branch."""
+    repo.git.fetch()
+    try:
+        try:
+            repo.git.checkout(config["dvc"]["data_version"])
+        except GitCommandError:
+            # If branch does not exist, create it
+            repo.git.checkout("HEAD", b=config["dvc"]["git_branch"])
+    except Exception as e:
+        logger.error(f"Git data version checkout failed with error: {e}")
+        raise e
+
+
+def get_authenticated_github_url(base_url):
+    """From the base git http url, generate an authenticated url."""
+    username = os.getenv("GITHUB_USERNAME")
+    password = os.getenv("GITHUB_PASSWORD")
+
+    if not username or not password:
+        logger.error(
+            "GITHUB_USERNAME or GITHUB_PASSWORD environment variables not set"
+        )
+        raise ValueError(
+            "GITHUB_USERNAME or GITHUB_PASSWORD environment variables not set"
+        )
+
+    # Separate protocol and the rest of the URL
+    protocol, rest_of_url = base_url.split("://")
+
+    # Construct the new URL with credentials
+    new_url = f"{protocol}://{username}:{password}@{rest_of_url}"
+
+    return new_url
+
+
+def dvc_pull(config):
+    """DVC pull."""
+    try:
+        dvc_main(["pull", "-r", config["dvc"]["remote_name"]])
+    except Exception as e:
+        logger.error(f"DVC push failed with error: {e}")
+        raise e
+
+
+def move_dvc_data(config):
+    try:
+        shutil.move(config["dvc"]["train_data_path"], "../artefacts/.")
+        shutil.move(config["dvc"]["test_data_path"], "../artefacts/.")
+        shutil.move(config["dvc"]["val_data_path"], "../artefacts/.")
+    except Exception as e:
+        logger.error(f"Copying dvc data failed with error {e}")
+        raise e
+
+
+def fetch_data(config):
+    """Fetch the versioned data from dvc."""
+    # 1. Authenticate, clone, and update git repo
+    authenticated_git_url = get_authenticated_github_url(
+        config["dvc"]["git_repo_url"]
+    )
+    repo_temp_path = "./repo"
+    Repo.clone_from(authenticated_git_url, repo_temp_path)
+    os.chdir(repo_temp_path)
+
+    # 2. Initialise git and dvc
+    repo = Repo("./")
+    assert not repo.bare
+
+    # 3. Checkout to the data version
+    checkout_data(repo, config)
+
+    # 4. DVC pull
+    dvc_pull(config)
+
+    # 5. move the pulled data to expected location
+    move_dvc_data(config)
+
+
+if __name__ == "__main__":
+    config = utils.load_yaml_config()
+    fetch_data(config)

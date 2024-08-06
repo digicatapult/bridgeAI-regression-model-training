@@ -16,6 +16,8 @@ pyyaml = "^6.0.1"
 pytest = "^8.2.2"
 mlflow = "^2.14.2"
 setuptools = "^70.2.0"
+dvc = "^3.53.0"
+gitpython = "^3.1.43"
 
 
 [tool.poetry.group.dev.dependencies]
