@@ -28,8 +28,6 @@ RUN mkdir artefacts
 ENV PYTHONPATH "${PYTHONPATH}:/app/src"
 
 # Set the environment variable
-# raw data path
-ENV DATA_PATH=/app/artefacts/HousingData.csv
 # config path
 ENV CONFIG_PATH=./config.yaml
 # log level

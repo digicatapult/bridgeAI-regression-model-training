@@ -13,21 +13,21 @@ from src.preprocess import create_dataloader
 from utils import get_device
 
 
-def evaluate(model, criterion, testloader, device):
+def evaluate(model, criterion, dataloader, device):
     """Evaluate the model on the given dataset."""
     loss = 0.0
     model.eval()
     with torch.no_grad():
-        for batch in testloader:
+        for batch in dataloader:
             data = batch[0].to(device)
             labels = batch[1].to(device)
             outputs = model(data)
             loss += criterion(outputs.view(-1), labels).item()
-    loss /= len(testloader.dataset)
+    loss /= len(dataloader.dataset)
     return loss
 
 
-def evaluate_on_test_data(config, run_id, model_save_path):
+def evaluate_on_test_data(config, run_id):
     """Evaluate the model on test dataset and log the metrics to mlflow."""
     device = get_device(config)
 
@@ -43,8 +43,7 @@ def evaluate_on_test_data(config, run_id, model_save_path):
 
     model = NNModel(in_feats=in_feats)
 
-    # TODO: load the model weights here...
-    model.load_state_dict(torch.load(model_save_path))
+    model.load_state_dict(torch.load(f'{config["model"]["model_name"]}.pth'))
     model = model.to(device)
     criterion = nn.MSELoss()
 

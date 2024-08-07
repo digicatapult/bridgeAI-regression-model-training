@@ -49,9 +49,32 @@ def get_authenticated_github_url(base_url):
 def dvc_pull(config):
     """DVC pull."""
     try:
-        dvc_main(["pull", "-r", config["dvc"]["remote_name"]])
+        dvc_remote_add(config)
+        dvc_main(["pull", "-r", config["dvc"]["dvc_remote_name"]])
     except Exception as e:
         logger.error(f"DVC push failed with error: {e}")
+        raise e
+
+
+def dvc_remote_add(config):
+    """Set the dvc remote."""
+    access_key_id = os.getenv("DVC_ACCESS_KEY_ID")
+    secret_access_key = os.getenv("DVC_SECRET_ACCESS_KEY")
+    region = config["dvc"]["dvc_region"]
+    try:
+        dvc_remote_name = os.getenv(
+            "DVC_REMOTE_NAME", config["dvc"]["dvc_remote_name"]
+        )
+        dvc_remote = os.getenv("DVC_REMOTE", config["dvc"]["dvc_remote"])
+
+        dvc_main(["remote", "add", "-f", dvc_remote_name, dvc_remote])
+        dvc_main(["remote", "modify", dvc_remote_name, "endpointurl", config["dvc"]["dvc_endpoint_url"]])
+        dvc_main(["remote", "modify", dvc_remote_name, "access_key_id", access_key_id])
+        dvc_main(["remote", "modify", dvc_remote_name, "secret_access_key", secret_access_key])
+        # Minio does not enforce regions but DVC requires it
+        dvc_main(["remote", "modify", dvc_remote_name, "region", region])
+    except Exception as e:
+        logger.error(f"DVC remote add failed with error: {e}")
         raise e
 
 
@@ -73,6 +96,7 @@ def fetch_data(config):
     )
     repo_temp_path = "./repo"
     Repo.clone_from(authenticated_git_url, repo_temp_path)
+
     os.chdir(repo_temp_path)
 
     # 2. Initialise git and dvc
@@ -87,6 +111,7 @@ def fetch_data(config):
 
     # 5. move the pulled data to expected location
     move_dvc_data(config)
+    os.chdir("../")
 
 
 if __name__ == "__main__":

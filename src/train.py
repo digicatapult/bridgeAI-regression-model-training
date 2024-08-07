@@ -21,7 +21,6 @@ def train(
     model,
     trainloader,
     valloader,
-    testloader,
     config,
     model_save_path,
     verbose=True,
@@ -35,7 +34,7 @@ def train(
         4. Repeat the training until epochs are completed or early stopping
             criteria is met
         5. Save the best model
-        7. At the end of training do a test on test data and log the results
+        6. At the end log the best model to MLFlow
     """
     # Selecting device- 'cpu' or 'gpu'
     device = get_device(config)
@@ -101,16 +100,6 @@ def train(
         f"Val Loss: {val_loss: .4f}"
     )
 
-    # TODO: move this evaluation to outside this module
-    # # Evaluate on unseen test data at the end of training
-    test_loss = evaluate(model, criterion, testloader, device=device)
-    # Log the test loss to mlflow;
-    mlflow.log_metric(
-        "test_loss1",
-        test_loss,
-    )
-    logger.info(f"Test Loss: {test_loss: .4f}")
-
     # Register the model in the MLFlow registry
     model_uri = mlflow_utils.log_torch_model(
         model,
@@ -169,10 +158,9 @@ def train_model(config):
 
     # 7. Train the model with metric logging
     logger.info("starting the training.")
+
     # Model save path
-    timestamp_ = datetime.now().strftime("%Y%m%d-%H%M%S")
-    model_unique_name = f'{config["model"]["model_name"]}-{timestamp_}.pth'
-    model_save_path = Path(config["model"]["save_path"]) / model_unique_name
+    model_save_path = f'{config["model"]["model_name"]}.pth'
 
     try:
         # Set the active run to the previously started run
@@ -181,7 +169,6 @@ def train_model(config):
                 regression_model,
                 train_dataloader,
                 val_dataloader,
-                test_dataloader,
                 config,
                 model_save_path,
                 verbose=True,
@@ -196,4 +183,4 @@ def train_model(config):
         # 8. Ensure the MLFlow run has ended properly
         if mlflow.active_run():
             mlflow.end_run("FINISHED")
-    return run_id, model_save_path
+    return run_id
