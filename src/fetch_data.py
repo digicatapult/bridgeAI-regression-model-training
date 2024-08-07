@@ -68,9 +68,33 @@ def dvc_remote_add(config):
         dvc_remote = os.getenv("DVC_REMOTE", config["dvc"]["dvc_remote"])
 
         dvc_main(["remote", "add", "-f", dvc_remote_name, dvc_remote])
-        dvc_main(["remote", "modify", dvc_remote_name, "endpointurl", config["dvc"]["dvc_endpoint_url"]])
-        dvc_main(["remote", "modify", dvc_remote_name, "access_key_id", access_key_id])
-        dvc_main(["remote", "modify", dvc_remote_name, "secret_access_key", secret_access_key])
+        dvc_main(
+            [
+                "remote",
+                "modify",
+                dvc_remote_name,
+                "endpointurl",
+                config["dvc"]["dvc_endpoint_url"],
+            ]
+        )
+        dvc_main(
+            [
+                "remote",
+                "modify",
+                dvc_remote_name,
+                "access_key_id",
+                access_key_id,
+            ]
+        )
+        dvc_main(
+            [
+                "remote",
+                "modify",
+                dvc_remote_name,
+                "secret_access_key",
+                secret_access_key,
+            ]
+        )
         # Minio does not enforce regions but DVC requires it
         dvc_main(["remote", "modify", dvc_remote_name, "region", region])
     except Exception as e:

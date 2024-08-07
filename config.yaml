@@ -31,4 +31,3 @@ dvc:
   dvc_remote_name: "regression-model-remote"    # a name assigned to the remote
   dvc_endpoint_url: "http://minio"  # dvc endpoint url
   dvc_region: "us-east-1"    # dvc region - used for s3, just a placeholder for minio
-
