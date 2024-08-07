@@ -25,7 +25,7 @@ COPY src ./src
 RUN mkdir artefacts
 
 # Add source directory to python path
-ENV PYTHONPATH "${PYTHONPATH}:/app/src"
+ENV PYTHONPATH="${PYTHONPATH}:/app/src"
 
 # Set the environment variable
 # config path

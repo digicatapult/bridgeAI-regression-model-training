@@ -1,5 +1,6 @@
 """Model evaluation on a given dataset."""
 
+import argparse
 import os
 import pickle
 from pathlib import Path
@@ -65,6 +66,15 @@ def evaluate_on_test_data(config, run_id):
 
 
 if __name__ == "__main__":
-    run_id = None
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--run_id",
+        type=str,
+        required=True,
+        help="The MLflow run ID where the "
+        "evaluation result should be updated",
+    )
+
+    args = parser.parse_args()
     config = utils.load_yaml_config()
-    evaluate_on_test_data(config, run_id)
+    evaluate_on_test_data(config, args.run_id)
