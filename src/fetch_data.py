@@ -13,9 +13,10 @@ from src.utils import logger
 def checkout_data(repo, config):
     """Checkout to the data branch."""
     repo.git.fetch()
+    data_version = os.getenv("DATA_VERSION", config["dvc"]["data_version"])
     try:
         try:
-            repo.git.checkout(config["dvc"]["data_version"])
+            repo.git.checkout(data_version)
         except GitCommandError:
             # If branch does not exist, create it
             repo.git.checkout("HEAD", b=config["dvc"]["git_branch"])

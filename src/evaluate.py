@@ -8,9 +8,10 @@ import mlflow
 import torch
 from torch import nn
 
+from src import utils
 from src.model import NNModel
 from src.preprocess import create_dataloader
-from utils import get_device
+from src.utils import get_device
 
 
 def evaluate(model, criterion, dataloader, device):
@@ -61,3 +62,9 @@ def evaluate_on_test_data(config, run_id):
     client.log_metric(run_id, "test_loss", test_loss)
 
     print(test_loss)
+
+
+if __name__ == "__main__":
+    run_id = None
+    config = utils.load_yaml_config()
+    evaluate_on_test_data(config, run_id)

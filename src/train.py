@@ -9,7 +9,7 @@ import mlflow
 import torch
 from torch import nn
 
-from src import mlflow_utils
+from src import mlflow_utils, utils
 from src.evaluate import evaluate
 from src.model import EarlyStopping, NNModel, save_model
 from src.preprocess import create_dataloader
@@ -175,3 +175,8 @@ def train_model(config):
         if mlflow.active_run():
             mlflow.end_run("FINISHED")
     return run_id
+
+
+if __name__ == "__main__":
+    config = utils.load_yaml_config()
+    train_model(config)
