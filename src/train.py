@@ -3,7 +3,6 @@
 import os
 import pickle
 import sys
-from datetime import datetime
 from pathlib import Path
 
 import mlflow
@@ -111,6 +110,7 @@ def train(
 
 
 def train_model(config):
+    """Load the data and train the model."""
     # Load preprocessed test data and prepare dataloader
     with open(
         Path(config["dvc"]["train_data_path"]).with_suffix(".pkl"), "rb"
@@ -131,15 +131,6 @@ def train_model(config):
         val_x, val_y = pickle.load(f)
     val_dataloader = create_dataloader(
         val_x, val_y, batch_size=config["model"]["test_batch_size"]
-    )
-
-    # Load preprocessed test data and prepare dataloader
-    with open(
-        Path(config["dvc"]["test_data_path"]).with_suffix(".pkl"), "rb"
-    ) as f:
-        test_x, test_y = pickle.load(f)
-    test_dataloader = create_dataloader(
-        test_x, test_y, batch_size=config["model"]["test_batch_size"]
     )
 
     logger.info("data loaders created.")
