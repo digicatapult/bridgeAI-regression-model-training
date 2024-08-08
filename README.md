@@ -15,7 +15,7 @@ or in the environment variable `DATA_PATH`
 
 ### Model training - using docker
 1. Build the docker image - `docker build -t regression .`
-2. Bring up the dependencies by using `docker-compose up -d`
+2. Bring up the dependencies by using `docker compose up -d`
 3. Run the container with the correct `DATA_PATH` and `MLFLOW_TRACKING_URI` as environment variables.
    (Refer to the following [Environment Variables](#environment-variables) table for complete list)\
    `docker run -e DATA_PATH=/app/artefacts/HousingData.csv -e MLFLOW_TRACKING_URI=http://host.docker.internal:5000 -v ./artefacts:/app/artefacts --rm regression`
