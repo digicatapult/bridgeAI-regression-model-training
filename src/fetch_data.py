@@ -2,6 +2,7 @@
 
 import os
 import shutil
+from pathlib import Path
 
 from dvc.cli import main as dvc_main
 from git import GitCommandError, Repo
@@ -47,13 +48,23 @@ def get_authenticated_github_url(base_url):
     return new_url
 
 
+def delete_file_if_exists(file_path):
+    """Delete a file if it exists."""
+    if os.path.exists(file_path):
+        os.remove(file_path)
+
+
 def dvc_pull(config):
     """DVC pull."""
+    # first remove if older data exists
+    delete_file_if_exists(config["dvc"]["train_data_path"])
+    delete_file_if_exists(config["dvc"]["test_data_path"])
+    delete_file_if_exists(config["dvc"]["val_data_path"])
     try:
         dvc_remote_add(config)
         dvc_main(["pull", "-r", config["dvc"]["dvc_remote_name"]])
     except Exception as e:
-        logger.error(f"DVC push failed with error: {e}")
+        logger.error(f"DVC pull failed with error: {e}")
         raise e
 
 
@@ -104,10 +115,24 @@ def dvc_remote_add(config):
 
 
 def move_dvc_data(config):
+    """Move pulled dvc data to where it is expected to be."""
+    # First delete if the destination has files with same name
+    destination = Path("../artefacts/.")
+    delete_file_if_exists(
+        destination / Path(config["dvc"]["train_data_path"]).name
+    )
+    delete_file_if_exists(
+        destination / Path(config["dvc"]["test_data_path"]).name
+    )
+    delete_file_if_exists(
+        destination / Path(config["dvc"]["val_data_path"]).name
+    )
+
+    # Now move the data
     try:
-        shutil.move(config["dvc"]["train_data_path"], "../artefacts/.")
-        shutil.move(config["dvc"]["test_data_path"], "../artefacts/.")
-        shutil.move(config["dvc"]["val_data_path"], "../artefacts/.")
+        shutil.move(config["dvc"]["train_data_path"], destination)
+        shutil.move(config["dvc"]["test_data_path"], destination)
+        shutil.move(config["dvc"]["val_data_path"], destination)
     except Exception as e:
         logger.error(f"Copying dvc data failed with error {e}")
         raise e

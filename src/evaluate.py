@@ -12,7 +12,7 @@ from torch import nn
 from src import utils
 from src.model import NNModel
 from src.preprocess import create_dataloader
-from src.utils import get_device
+from src.utils import get_device, logger
 
 
 def evaluate(model, criterion, dataloader, device):
@@ -29,7 +29,7 @@ def evaluate(model, criterion, dataloader, device):
     return loss
 
 
-def evaluate_on_test_data(config, run_id):
+def evaluate_on_test_data(config, run_id: str, metric_name: str):
     """Evaluate the model on test dataset and log the metrics to mlflow."""
     device = get_device(config)
 
@@ -43,24 +43,42 @@ def evaluate_on_test_data(config, run_id):
     )
     in_feats = test_dataloader.dataset[0][0].shape[0]
 
+    # Load the trained model weights
     model = NNModel(in_feats=in_feats)
+    model_save_path = (
+        Path("./artefacts") / f'{config["model"]["model_name"]}.pth'
+    )
 
-    model.load_state_dict(torch.load(f'{config["model"]["model_name"]}.pth'))
+    model.load_state_dict(torch.load(model_save_path))
     model = model.to(device)
     criterion = nn.MSELoss()
 
-    mlflow_tracking_uri = os.getenv(
-        "MLFLOW_TRACKING_URI", config["mlflow"]["tracking_uri"]
-    )
-    # Set the tracking URI
-    mlflow.set_tracking_uri(mlflow_tracking_uri)
+    logger.info(f"Loaded the model from {model_save_path} for evaluation")
 
-    # Initialize the MLflow client
-    client = mlflow.tracking.MlflowClient()
-
+    # Evaluate the model
     test_loss = evaluate(model, criterion, test_dataloader, device=device)
-    # Log the test loss to mlflow;
-    client.log_metric(run_id, "test_loss", test_loss)
+
+    logger.info(f"Model evaluated: {metric_name} = {test_loss: .4f}")
+
+    if run_id is not None:
+        try:
+            mlflow_tracking_uri = os.getenv(
+                "MLFLOW_TRACKING_URI", config["mlflow"]["tracking_uri"]
+            )
+            # Set the tracking URI
+            mlflow.set_tracking_uri(mlflow_tracking_uri)
+
+            # Initialize the MLflow client
+            client = mlflow.tracking.MlflowClient()
+
+            # Log the test loss to mlflow;
+            client.log_metric(run_id, metric_name, test_loss)
+        except Exception as e:
+            logger.error(f"MLFlow logging of metric failed: {e}")
+    else:
+        logger.warning(
+            f"MLFlow run_id is None! Not logging the metric {metric_name}"
+        )
 
     print(test_loss)
 
@@ -71,10 +89,18 @@ if __name__ == "__main__":
         "--run_id",
         type=str,
         required=True,
-        help="The MLflow run ID where the "
+        help="The MLFlow run ID where the "
         "evaluation result should be updated",
+    )
+
+    parser.add_argument(
+        "--metric_name",
+        type=str,
+        default="test_loss",
+        required=False,
+        help="The MLFlow metric name to log the evaluation result",
     )
 
     args = parser.parse_args()
     config = utils.load_yaml_config()
-    evaluate_on_test_data(config, args.run_id)
+    evaluate_on_test_data(config, args.run_id, args.metric_name)

@@ -10,6 +10,10 @@ RUN apt-get update &&  \
 # Set the working directory in the container
 WORKDIR /app
 
+# creating the file to write XComs to
+RUN mkdir -p /airflow/xcom
+RUN echo "" > /airflow/xcom/return.json
+
 # Configure Poetry to not use virtual environments
 ENV POETRY_VIRTUALENVS_CREATE=false
 

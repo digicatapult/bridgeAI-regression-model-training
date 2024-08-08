@@ -1,5 +1,6 @@
 """NN model training loop with logging."""
 
+import json
 import os
 import pickle
 import sys
@@ -151,7 +152,9 @@ def train_model(config):
     logger.info("starting the training.")
 
     # Model save path
-    model_save_path = f'{config["model"]["model_name"]}.pth'
+    model_save_path = (
+        Path("./artefacts") / f'{config["model"]["model_name"]}.pth'
+    )
 
     try:
         # Set the active run to the previously started run
@@ -165,6 +168,7 @@ def train_model(config):
                 verbose=True,
             )
             logger.info("Training completed.")
+            logger.info(f"Model saved locally to {model_save_path}")
     except Exception as err:
         mlflow.end_run("FAILED")
         mlflow.log_param("error", err)
@@ -174,9 +178,18 @@ def train_model(config):
         # 8. Ensure the MLFlow run has ended properly
         if mlflow.active_run():
             mlflow.end_run("FINISHED")
+
+        # write to the file checked by Airflow for XComs
+        xcom_json = {"run_id": f"{run_id}"}
+
+        with open("/airflow/xcom/return.json", "w") as f:
+            json.dump(xcom_json, f)
+
+    logger.info(f"Experiment has been logged to MLFlow with run_id: {run_id}")
+
     return run_id
 
 
 if __name__ == "__main__":
     config = utils.load_yaml_config()
-    train_model(config)
+    run_id = train_model(config)

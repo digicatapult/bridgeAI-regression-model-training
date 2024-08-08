@@ -31,7 +31,6 @@ def main():
     run_id = train_model(config)
 
     # 4. evaluate the model and update the result on mlflow
-    # TODO:
     evaluate_on_test_data(config, run_id)
 
 
