@@ -58,7 +58,7 @@ jobs:
           python-version: "3.12"
           cache: poetry
       - name: Setup dependencies for integration test
-        run: docker-compose up -d
+        run: docker compose up -d
       - name: Sleep
         uses: kibertoad/wait-action@1.0.1
         with:

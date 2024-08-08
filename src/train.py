@@ -1,25 +1,28 @@
 """NN model training loop with logging."""
 
+import json
+import os
+import pickle
 import sys
-from datetime import datetime
 from pathlib import Path
 
 import mlflow
 import torch
 from torch import nn
 
-from src import mlflow_utils
+from src import mlflow_utils, utils
 from src.evaluate import evaluate
-from src.model import EarlyStopping, save_model
-from src.utils import logger
+from src.model import EarlyStopping, NNModel, save_model
+from src.preprocess import create_dataloader
+from src.utils import get_device, logger
 
 
 def train(
     model,
     trainloader,
     valloader,
-    testloader,
     config,
+    model_save_path,
     verbose=True,
 ):
     """Train the model on the training data set.
@@ -31,17 +34,10 @@ def train(
         4. Repeat the training until epochs are completed or early stopping
             criteria is met
         5. Save the best model
-        7. At the end of training do a test on test data and log the results
+        6. At the end log the best model to MLFlow
     """
     # Selecting device- 'cpu' or 'gpu'
-    if config["model"]["use_gpu"]:
-        if torch.cuda.is_available():
-            device = torch.device("cuda")
-        else:
-            device = torch.device("cpu")
-            logger.warn("Falling back to 'CPU'; no usable 'GPU' found!")
-    else:
-        device = torch.device("cpu")
+    device = get_device(config)
 
     logger.info(f"Using {device}")
     model = model.to(device)
@@ -55,11 +51,6 @@ def train(
         patience=config["model"]["es_patience"],
         delta=config["model"]["es_delta"],
     )
-
-    # Model save path
-    timestamp_ = datetime.now().strftime("%Y%m%d-%H%M%S")
-    model_unique_name = f'{config["model"]["model_name"]}-{timestamp_}.pth'
-    model_save_path = Path(config["model"]["save_path"]) / model_unique_name
 
     # Training for given number of epochs
     n_epochs = config["model"]["n_epochs"]
@@ -109,15 +100,6 @@ def train(
         f"Val Loss: {val_loss: .4f}"
     )
 
-    # Evaluate on unseen test data at the end of training
-    test_loss = evaluate(model, criterion, testloader, device=device)
-    # Log the test loss to mlflow;
-    mlflow.log_metric(
-        "test_loss",
-        test_loss,
-    )
-    logger.info(f"Test Loss: {test_loss: .4f}")
-
     # Register the model in the MLFlow registry
     model_uri = mlflow_utils.log_torch_model(
         model,
@@ -126,3 +108,88 @@ def train(
         config["model"]["model_name"],
     )
     logger.info(f"Model registered in MLFlow. uri - {model_uri}")
+
+
+def train_model(config):
+    """Load the data and train the model."""
+    # Load preprocessed test data and prepare dataloader
+    with open(
+        Path(config["dvc"]["train_data_path"]).with_suffix(".pkl"), "rb"
+    ) as f:
+        train_x, train_y = pickle.load(f)
+
+    train_dataloader = create_dataloader(
+        train_x,
+        train_y,
+        batch_size=config["model"]["train_batch_size"],
+        shuffle=True,
+    )
+
+    # Load preprocessed val data and prepare dataloader
+    with open(
+        Path(config["dvc"]["val_data_path"]).with_suffix(".pkl"), "rb"
+    ) as f:
+        val_x, val_y = pickle.load(f)
+    val_dataloader = create_dataloader(
+        val_x, val_y, batch_size=config["model"]["test_batch_size"]
+    )
+
+    logger.info("data loaders created.")
+
+    # 5. Create/Initialise a model object
+    regression_model = NNModel(in_feats=train_x.shape[1])
+
+    # 6. start MLFLow run and log the parameters
+    mlflow_tracking_uri = os.getenv(
+        "MLFLOW_TRACKING_URI", config["mlflow"]["tracking_uri"]
+    )
+    mlflow_utils.start_run(mlflow_tracking_uri, config["mlflow"]["expt_name"])
+    run_id = mlflow_utils.get_activ_run_id()
+    logger.info(f"started MLFlow run with run id: {run_id}")
+    mlflow_utils.log_param_dict(mlflow_utils.flatten_dict(config))
+
+    # 7. Train the model with metric logging
+    logger.info("starting the training.")
+
+    # Model save path
+    model_save_path = (
+        Path("./artefacts") / f'{config["model"]["model_name"]}.pth'
+    )
+
+    try:
+        # Set the active run to the previously started run
+        with mlflow.start_run(run_id=run_id, nested=True):
+            train(
+                regression_model,
+                train_dataloader,
+                val_dataloader,
+                config,
+                model_save_path,
+                verbose=True,
+            )
+            logger.info("Training completed.")
+            logger.info(f"Model saved locally to {model_save_path}")
+    except Exception as err:
+        mlflow.end_run("FAILED")
+        mlflow.log_param("error", err)
+        logger.info(f"Training task failed with error - {err}")
+        raise Exception(err)
+    else:
+        # 8. Ensure the MLFlow run has ended properly
+        if mlflow.active_run():
+            mlflow.end_run("FINISHED")
+
+        # write to the file checked by Airflow for XComs
+        xcom_json = {"run_id": f"{run_id}"}
+
+        with open("/airflow/xcom/return.json", "w") as f:
+            json.dump(xcom_json, f)
+
+    logger.info(f"Experiment has been logged to MLFlow with run_id: {run_id}")
+
+    return run_id
+
+
+if __name__ == "__main__":
+    config = utils.load_yaml_config()
+    run_id = train_model(config)

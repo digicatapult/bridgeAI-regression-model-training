@@ -3,12 +3,16 @@ FROM python:3.12-slim
 
 # Install dependencies and Poetry
 RUN apt-get update &&  \
-    apt-get install -y --fix-missing build-essential && \
+    apt-get install -y --fix-missing build-essential git && \
     pip install --no-cache-dir poetry && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Set the working directory in the container
 WORKDIR /app
+
+# creating the file to write XComs to
+RUN mkdir -p /airflow/xcom
+RUN echo "" > /airflow/xcom/return.json
 
 # Configure Poetry to not use virtual environments
 ENV POETRY_VIRTUALENVS_CREATE=false
@@ -25,11 +29,9 @@ COPY src ./src
 RUN mkdir artefacts
 
 # Add source directory to python path
-ENV PYTHONPATH "${PYTHONPATH}:/app/src"
+ENV PYTHONPATH="${PYTHONPATH}:/app/src"
 
 # Set the environment variable
-# raw data path
-ENV DATA_PATH=/app/artefacts/HousingData.csv
 # config path
 ENV CONFIG_PATH=./config.yaml
 # log level

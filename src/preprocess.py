@@ -1,50 +1,18 @@
 """Data split, preprocess and other data utilities."""
 
-import os
+import pickle
+from pathlib import Path
 
 import joblib
 import pandas as pd
 import torch
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
-from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from torch.utils.data import DataLoader, TensorDataset
 
-
-def load_and_split_data(config: dict, seed: int = 42) -> None:
-    """Load a single data source and split it into train, test and val."""
-    test_size = 0.2
-    val_size = 0.2
-    # read raw data file path from environment variable
-    raw_data_path = os.getenv("DATA_PATH", config["data"]["raw_data"])
-    data = pd.read_csv(raw_data_path)
-
-    # Split features(X) and target(y) variable
-    label_column = config["data"]["label_col"]
-    X_all = data.drop(label_column, axis=1)
-    y_all = data[label_column]
-
-    # Split the data into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(
-        X_all, y_all, test_size=test_size, random_state=seed
-    )
-
-    # Split the training data further into train and val data
-    X_train, X_val, y_train, y_val = train_test_split(
-        X_train, y_train, test_size=val_size, random_state=seed
-    )
-
-    # Combine features and labels into a dataframe
-    X_train[config["data"]["label_col"]] = y_train
-    X_test[config["data"]["label_col"]] = y_test
-    X_val[config["data"]["label_col"]] = y_val
-
-    # Save the split dataframes into csvs
-    X_train.to_csv(config["data"]["train_data_save_path"], index=False)
-    X_val.to_csv(config["data"]["val_data_save_path"], index=False)
-    X_test.to_csv(config["data"]["test_data_save_path"], index=False)
+from src import utils
 
 
 def preprocess(
@@ -103,6 +71,47 @@ def preprocess(
     return data_preprocessed, labels
 
 
+def preprocess_datasets(config):
+    """Preprocess the split of data and save them."""
+    # [Train data] preprocess train data and save the preprocessing steps
+    train_x, train_y = preprocess(
+        config["dvc"]["train_data_path"],
+        config,
+        preprocessor=None,
+        save_preprocessor=True,
+    )
+
+    with open(
+        Path(config["dvc"]["train_data_path"]).with_suffix(".pkl"), "wb"
+    ) as f:
+        pickle.dump((train_x, train_y), f)
+
+    # Load the preprocessor created while preparing the train data
+    # This is needed to apply the same preprocessing to other data
+    preprocessor = joblib.load(config["data"]["preprocessor_path"])
+
+    # [val data] preprocess and create data loader
+    # preprocess val data and prepare validation data loader
+    val_x, val_y = preprocess(
+        config["dvc"]["val_data_path"], config, preprocessor=preprocessor
+    )
+    with open(
+        Path(config["dvc"]["val_data_path"]).with_suffix(".pkl"), "wb"
+    ) as f:
+        pickle.dump((val_x, val_y), f)
+
+    # [test data] preprocess and create data loader
+    test_x, test_y = preprocess(
+        config["dvc"]["test_data_path"],
+        config,
+        preprocessor=preprocessor,
+    )
+    with open(
+        Path(config["dvc"]["test_data_path"]).with_suffix(".pkl"), "wb"
+    ) as f:
+        pickle.dump((test_x, test_y), f)
+
+
 def create_dataloader(features, labels, batch_size: int = 32, shuffle=False):
     """Create pytorch dataloader for the data."""
     features_tensor = torch.tensor(features, dtype=torch.float32)
@@ -110,3 +119,8 @@ def create_dataloader(features, labels, batch_size: int = 32, shuffle=False):
     dataset = TensorDataset(features_tensor, labels_tensor)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
     return dataloader
+
+
+if __name__ == "__main__":
+    config = utils.load_yaml_config()
+    preprocess_datasets(config)

@@ -1,14 +1,12 @@
 """Dummy mocked main for MLFlow integration test."""
 
-from unittest.mock import MagicMock, patch
-
 import mlflow
 import requests
 import torch
 from mlflow.tracking import MlflowClient
 from torch.utils.data import DataLoader, TensorDataset
 
-from src.main import main
+from src import mlflow_utils
 
 
 class SimpleNN(torch.nn.Module):
@@ -22,30 +20,13 @@ class SimpleNN(torch.nn.Module):
         return self.layer(x)
 
 
-@patch("src.main.utils.load_yaml_config")
-@patch("src.main.load_and_split_data")
-@patch("src.main.preprocess")
-@patch("src.main.create_dataloader")
-@patch("src.main.joblib.load")
-@patch("src.main.NNModel")
-@patch("src.train.torch.optim.Adam")
-@patch("src.train.evaluate")
-def test_main(
-    mock_eval,
-    mock_opt,
-    mock_NNModel,
-    mock_joblib_load,
-    mock_create_dataloader,
-    mock_preprocess,
-    mock_load_and_split_data,
-    mock_load_yaml_config,
-):
+def test_integration_mlflow():
     # Setup mock return values
     mlflow_uri = "http://localhost:5000"
     expt_name = "test-expt"
     model_name = "test-model"
 
-    mock_load_yaml_config.return_value = {
+    config = {
         "data": {
             "raw_data": "data.csv",
             "train_data_save_path": "train.csv",
@@ -69,14 +50,16 @@ def test_main(
             "expt_name": expt_name,
         },
     }
-    mock_eval.return_value = 1.1
-    mock_opt.return_value = MagicMock()
-    mock_load_and_split_data.return_value = None
-    mock_preprocess.return_value = (MagicMock(), MagicMock())
 
+    # Start a run and log some values
+    mlflow_utils.start_run(mlflow_uri, config["mlflow"]["expt_name"])
+    mlflow_utils.log_param_dict(mlflow_utils.flatten_dict(config))
+    mlflow.log_metric("loss", 1.1, step=1)
+
+    # log model and get the model uri
+    # Create a TensorDataset from the tensor
     input_dim = 8
     output_dim = 1
-    mock_NNModel.return_value = SimpleNN(input_dim, output_dim)
 
     # Create a TensorDataset from the tensor
     dataset = TensorDataset(
@@ -84,13 +67,19 @@ def test_main(
     )
     # Create the DataLoader
     dataloader = DataLoader(dataset, batch_size=4)
-    mock_create_dataloader.return_value = dataloader
+    model = SimpleNN(input_dim, output_dim)
 
-    # train_dataloader, val_dataloader, test_dataloader
-    mock_joblib_load.return_value = MagicMock()
+    mlflow_utils.log_torch_model(
+        model,
+        dataloader,
+        mlflow.active_run(),
+        config["model"]["model_name"],
+    )
 
-    # call main with the mocks
-    main()
+    # Get the active run id and end run
+    run_id = mlflow_utils.get_activ_run_id()
+    if mlflow.active_run():
+        mlflow.end_run("FINISHED")
 
     # check if experiment is logged
     mlflow.set_tracking_uri(mlflow_uri)
@@ -102,7 +91,6 @@ def test_main(
 
     # 1. Check if the MLFlow connection worked as expected
     # Check the status of the run
-    run_id = runs["run_id"][0]
     run_data = requests.get(
         f"{mlflow_uri}/api/2.0/mlflow/runs/get?run_id={run_id}"
     ).json()
