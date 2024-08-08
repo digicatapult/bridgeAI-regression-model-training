@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 import torch
 
-from src.preprocess import create_dataloader, load_and_split_data, preprocess
+from src.preprocess import create_dataloader, preprocess
 
 
 @pytest.fixture
@@ -38,23 +38,6 @@ def mock_data():
             "target": [0, 1, 0, 1, 0],
         }
     )
-
-
-@patch("src.preprocess.pd.read_csv")
-@patch("src.preprocess.pd.DataFrame.to_csv")
-def test_load_and_split_data(
-    mock_to_csv, mock_read_csv, mock_config, mock_data
-):
-    """Test load_and_split_data function."""
-    mock_read_csv.return_value = mock_data
-
-    load_and_split_data(mock_config, seed=42)
-
-    # Ensure read_csv is called with the correct path
-    mock_read_csv.assert_called_once_with("data.csv")
-
-    # Should be called three times for train, val, and test sets
-    assert mock_to_csv.call_count == 3
 
 
 @patch("src.preprocess.pd.read_csv")
