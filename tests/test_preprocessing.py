@@ -1,6 +1,6 @@
 """Unit tests for data preprocessing."""
 
-from unittest.mock import ANY, patch
+from unittest.mock import ANY, MagicMock, patch
 
 import pandas as pd
 import pytest
@@ -14,15 +14,16 @@ def mock_config():
     """Create a mock configuration."""
     return {
         "data": {
-            "raw_data": "data.csv",
             "label_col": "target",
-            "train_data_save_path": "train.csv",
-            "val_data_save_path": "val.csv",
-            "test_data_save_path": "test.csv",
             "preprocessor_path": "preprocessor.joblib",
             "numeric_cols": ["num1", "num2"],
             "categorical_cols": ["cat1", "cat2"],
-        }
+        },
+        "dvc": {
+            "train_data_path": "train.csv",
+            "val_data_path": "val.csv",
+            "test_data_path": "test.csv",
+        },
     }
 
 
@@ -40,22 +41,26 @@ def mock_data():
     )
 
 
+@patch("src.preprocess.schema")
 @patch("src.preprocess.pd.read_csv")
 @patch("src.preprocess.joblib.dump")
-def test_preprocess(mock_joblib_dump, mock_read_csv, mock_config, mock_data):
+def test_preprocess(
+    mock_joblib_dump, mock_read_csv, mock_schema, mock_config, mock_data
+):
     """Test preprocess function."""
     mock_read_csv.return_value = mock_data
     mock_joblib_dump.return_value = None
+    mock_schema.validate = MagicMock(side_effect=lambda x: x)
 
     features, labels = preprocess(
-        mock_config["data"]["train_data_save_path"],
+        mock_config["dvc"]["train_data_path"],
         mock_config,
         save_preprocessor=True,
     )
 
     # Ensure read_csv is called with the correct path
     mock_read_csv.assert_called_once_with(
-        mock_config["data"]["train_data_save_path"]
+        mock_config["dvc"]["train_data_path"]
     )
 
     # Ensure joblib.dump is called once to save the preprocessor
@@ -68,18 +73,20 @@ def test_preprocess(mock_joblib_dump, mock_read_csv, mock_config, mock_data):
     assert labels.shape[0] == mock_data.shape[0]
 
 
+@patch("src.preprocess.schema")
 @patch("src.preprocess.pd.read_csv")
 @patch("src.preprocess.joblib.dump")
 def test_create_dataloader(
-    mock_joblib_dump, mock_read_csv, mock_config, mock_data
+    mock_joblib_dump, mock_read_csv, mock_schema, mock_config, mock_data
 ):
     """Test create_dataloader function."""
     batch_size = 2
     mock_read_csv.return_value = mock_data
     mock_joblib_dump.return_value = None
+    mock_schema.validate = MagicMock(side_effect=lambda x: x)
 
     features, labels = preprocess(
-        mock_config["data"]["train_data_save_path"],
+        mock_config["dvc"]["train_data_path"],
         mock_config,
         save_preprocessor=True,
     )

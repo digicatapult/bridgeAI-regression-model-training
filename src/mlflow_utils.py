@@ -1,7 +1,16 @@
+from types import SimpleNamespace
+
 import mlflow
+import mlflow.pyfunc
 import mlflow.pytorch
+import pandas as pd
+import toml
 import torch
 from mlflow.models.signature import infer_signature
+
+from src.preprocess import schema
+from src.servable_model import ServableModel
+from src.utils import get_device
 
 
 def start_run(tracking_uri: str, experiment_name: str):
@@ -28,29 +37,54 @@ def log_param_dict(config: dict):
 
 
 def log_torch_model(
-    model,
-    dataloader,
     run,
-    model_name,
+    model_save_path,
+    config,
 ):
     """Logs the given PyTorch model to MLflow Model Registry."""
-    # Infer the signature from the sample data
-    model.eval()
-    sample_x, _ = next(iter(dataloader))
-    with torch.no_grad():
-        example_output = model(sample_x)
-    signature = infer_signature(sample_x.numpy(), example_output.numpy())
 
-    # Log the PyTorch model with the inferred signature
-    mlflow.pytorch.log_model(
-        model,
-        model_name,
-        signature=signature,
+    feature_cols = (
+        config["data"]["categorical_cols"] + config["data"]["numeric_cols"]
     )
-    model_uri = f"runs:/{run.info.run_id}/{model_name}"
 
-    # Register the model in Model Registry for versioning and stage management
-    mlflow.register_model(model_uri=model_uri, name=model_name)
+    sample_data = pd.read_csv(
+        config["dvc"]["val_data_path"], usecols=feature_cols, nrows=4
+    )
+    sample_data = schema.validate(sample_data)
+    preprocessor_save_path = config["data"]["preprocessor_path"]
+
+    # Use custom model to predict on the sample data to infer signature
+    device = get_device(config)
+
+    model = ServableModel(device)
+    # Create a simulated context object
+    context = SimpleNamespace(
+        artifacts={
+            "torch_model": model_save_path,
+            "preprocessor": preprocessor_save_path,
+        }
+    )
+    # Update the context of the custom model
+    model.load_context(context)
+    # Do inference on sample data to get sample output
+    with torch.no_grad():
+        sample_output = model.predict(context=context, model_input=sample_data)
+    signature = infer_signature(sample_data, sample_output)
+
+    # Log the PyTorch model with dependancies
+    mlflow.pyfunc.log_model(
+        artifact_path="custom_pytorch_model",
+        python_model=ServableModel(device),
+        artifacts={
+            "torch_model": str(model_save_path),
+            "preprocessor": preprocessor_save_path,
+        },
+        signature=signature,
+        conda_env=get_conda_env(),
+        infer_code_paths=False,
+        code_paths=["./src"],
+    )
+    model_uri = f"runs:/{run.info.run_id}/{config['model']['model_name']}"
     return model_uri
 
 
@@ -64,3 +98,24 @@ def flatten_dict(d, parent_key="", sep="."):
         else:
             items.append((new_key, v))
     return dict(items)
+
+
+def get_conda_env(toml_path: str = "./pyproject.toml") -> dict:
+    """Get the conda environment details from the pyproject."""
+    # Load the pyproject.toml file
+    pyproject = toml.load(toml_path)
+
+    # Extract dependencies from the [tool.poetry] of the pyproject file
+    dependencies = pyproject["tool"]["poetry"].get("dependencies", [])
+    # Remove the redundant ones
+    dependencies.pop("python", None)
+    dependencies.pop("mlflow", None)
+
+    # Convert the gathered dependancies into proper foramt
+    dependencies = [
+        f"{pkg}>={ver.lstrip('^')}" for pkg, ver in dependencies.items()
+    ]
+
+    conda_env = mlflow.pyfunc.get_default_conda_env()
+    conda_env["dependencies"][-1]["pip"].extend(dependencies)
+    return conda_env

@@ -19,6 +19,8 @@ setuptools = "^70.2.0"
 dvc = "^3.53.0"
 gitpython = "^3.1.43"
 dvc-s3 = "^3.2.0"
+pandera = "^0.20.3"
+toml = "^0.10.2"
 
 
 [tool.poetry.group.dev.dependencies]

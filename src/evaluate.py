@@ -10,7 +10,6 @@ import torch
 from torch import nn
 
 from src import utils
-from src.model import NNModel
 from src.preprocess import create_dataloader
 from src.utils import get_device, logger
 
@@ -41,15 +40,12 @@ def evaluate_on_test_data(config, run_id: str, metric_name: str):
     test_dataloader = create_dataloader(
         test_x, test_y, batch_size=config["model"]["test_batch_size"]
     )
-    in_feats = test_dataloader.dataset[0][0].shape[0]
-
     # Load the trained model weights
-    model = NNModel(in_feats=in_feats)
     model_save_path = (
         Path("./artefacts") / f'{config["model"]["model_name"]}.pth'
     )
 
-    model.load_state_dict(torch.load(model_save_path))
+    model = torch.load(model_save_path, weights_only=False)
     model = model.to(device)
     criterion = nn.MSELoss()
 

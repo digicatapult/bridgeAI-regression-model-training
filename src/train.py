@@ -102,10 +102,7 @@ def train(
 
     # Register the model in the MLFlow registry
     model_uri = mlflow_utils.log_torch_model(
-        model,
-        valloader,
-        mlflow.active_run(),
-        config["model"]["model_name"],
+        mlflow.active_run(), model_save_path, config
     )
     logger.info(f"Model registered in MLFlow. uri - {model_uri}")
 

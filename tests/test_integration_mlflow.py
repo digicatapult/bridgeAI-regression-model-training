@@ -4,7 +4,6 @@ import mlflow
 import requests
 import torch
 from mlflow.tracking import MlflowClient
-from torch.utils.data import DataLoader, TensorDataset
 
 from src import mlflow_utils
 
@@ -28,11 +27,10 @@ def test_integration_mlflow():
 
     config = {
         "data": {
-            "raw_data": "data.csv",
-            "train_data_save_path": "train.csv",
-            "val_data_save_path": "val.csv",
-            "test_data_save_path": "test.csv",
-            "preprocessor_path": "preprocessor.joblib",
+            "label_col": "price",
+            "categorical_cols": ["col1", "col2"],
+            "numeric_cols": ["col3", "col4", "col5"],
+            "preprocessor_path": "./artefacts/test-preprocessor.joblib",
         },
         "model": {
             "model_name": "test-model",
@@ -49,6 +47,9 @@ def test_integration_mlflow():
             "tracking_uri": mlflow_uri,
             "expt_name": expt_name,
         },
+        "dvc": {
+            "git_repo_url": "https://sample_url",
+        },
     }
 
     # Start a run and log some values
@@ -57,29 +58,18 @@ def test_integration_mlflow():
     mlflow.log_metric("loss", 1.1, step=1)
 
     # log model and get the model uri
-    # Create a TensorDataset from the tensor
     input_dim = 8
     output_dim = 1
 
-    # Create a TensorDataset from the tensor
-    dataset = TensorDataset(
-        torch.randn(4, input_dim), torch.randn(4, output_dim)
-    )
-    # Create the DataLoader
-    dataloader = DataLoader(dataset, batch_size=4)
     model = SimpleNN(input_dim, output_dim)
-
-    mlflow_utils.log_torch_model(
-        model,
-        dataloader,
-        mlflow.active_run(),
-        config["model"]["model_name"],
-    )
 
     # Get the active run id and end run
     run_id = mlflow_utils.get_activ_run_id()
     if mlflow.active_run():
         mlflow.end_run("FINISHED")
+
+    mlflow.pytorch.log_model(model, "model")
+    mlflow.register_model(model_uri=f"runs:/{run_id}/model", name=model_name)
 
     # check if experiment is logged
     mlflow.set_tracking_uri(mlflow_uri)

@@ -1,5 +1,7 @@
 """Model definition for profiler."""
 
+from copy import deepcopy
+
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -62,4 +64,4 @@ class EarlyStopping:
     def save_checkpoint(self, val_loss, model):
         """Saves model when validation loss decreases."""
         self.best_loss = val_loss
-        self.best_model = model.state_dict().copy()
+        self.best_model = deepcopy(model)
