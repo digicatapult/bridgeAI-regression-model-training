@@ -6,6 +6,7 @@ from pathlib import Path
 import joblib
 import pandas as pd
 import torch
+from pandera import Column, DataFrameSchema
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
@@ -13,6 +14,24 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from torch.utils.data import DataLoader, TensorDataset
 
 from src import utils
+
+schema = DataFrameSchema(
+    {
+        "area": Column(float),
+        "bedrooms": Column(int),
+        "bathrooms": Column(int),
+        "stories": Column(int),
+        "mainroad": Column(str),
+        "guestroom": Column(str),
+        "basement": Column(str),
+        "hotwaterheating": Column(str),
+        "airconditioning": Column(str),
+        "parking": Column(int),
+        "prefarea": Column(str),
+        "furnishingstatus": Column(str),
+    },
+    coerce=True,
+)
 
 
 def preprocess(
@@ -24,6 +43,7 @@ def preprocess(
     """Preprocess the data and return a tuple of features and labels."""
     # Load the data from csv files with the correct column names
     data = pd.read_csv(data_path)
+    data = schema.validate(data)
 
     # Define the target, numerical and categorical features
     label_col = config["data"]["label_col"]

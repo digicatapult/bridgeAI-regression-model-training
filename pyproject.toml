@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "bridgeai-regression-model-training"
-version = "0.2.0"
+version = "0.3.0"
 description = "A basic containerised regression model training setup"
 authors = ["DC AI Team <opensource@digicatapult.org.uk>"]
 readme = "README.md"
@@ -19,6 +19,8 @@ setuptools = "^70.2.0"
 dvc = "^3.53.0"
 gitpython = "^3.1.43"
 dvc-s3 = "^3.2.0"
+pandera = "^0.20.3"
+toml = "^0.10.2"
 
 
 [tool.poetry.group.dev.dependencies]
