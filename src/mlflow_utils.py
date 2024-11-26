@@ -125,18 +125,26 @@ def get_conda_env(toml_path: str = "./pyproject.toml") -> dict:
     return conda_env
 
 
-def promote_model(model_uri, run_id, model_register_name, model_alias):
+def promote_model(model_uri, model_register_name, model_alias):
     """Register model and add alias - for deployment."""
     # Initialise MLflow client
     client = MlflowClient()
 
-    # Register the model
-    model_version = client.create_model_version(
-        name=model_register_name, source=model_uri, run_id=run_id
-    )
+    # Register the model in the registry if it doesn't already exist
+    result = mlflow.register_model(model_uri, model_register_name)
+
+    # Wait for the registration process to complete
+    while True:
+        model_version_details = client.get_model_version(
+            name=model_register_name, version=result.version
+        )
+        status = model_version_details.status
+        if status == "READY":
+            break
+        time.sleep(1)
 
     # Wait until the model version is ready
-    model_version_number = model_version.version
+    model_version_number = result.version
 
     status = None
     while status != "READY":

@@ -195,9 +195,7 @@ def train_model(config):
         model_alias = os.getenv(
             "DEPLOY_MODEL_ALIAS", config["mlflow"]["model_alias"]
         )
-        mlflow_utils.promote_model(
-            model_uri, run_id, model_register_name, model_alias
-        )
+        mlflow_utils.promote_model(model_uri, model_register_name, model_alias)
 
     return run_id
 
