@@ -21,9 +21,10 @@ class SimpleNN(torch.nn.Module):
 
 def test_integration_mlflow():
     # Setup mock return values
-    mlflow_uri = "http://localhost:5000"
+    mlflow_uri = "http://localhost:5001"
     expt_name = "test-expt"
-    model_name = "test-model"
+    model_register_name = "registered_name"
+    model_alias = "champion"
 
     config = {
         "data": {
@@ -63,13 +64,16 @@ def test_integration_mlflow():
 
     model = SimpleNN(input_dim, output_dim)
 
-    # Get the active run id and end run
+    # Get the active run id
     run_id = mlflow_utils.get_activ_run_id()
+
+    mlflow.pytorch.log_model(model, "model")
+
+    # end run
     if mlflow.active_run():
         mlflow.end_run("FINISHED")
 
-    mlflow.pytorch.log_model(model, "model")
-    mlflow.register_model(model_uri=f"runs:/{run_id}/model", name=model_name)
+    model_uri = f"runs:/{run_id}/model"
 
     # check if experiment is logged
     mlflow.set_tracking_uri(mlflow_uri)
@@ -96,10 +100,17 @@ def test_integration_mlflow():
     # 4. Check if the model is registered properly
     client = MlflowClient()
 
-    # Check the latest version of the model
-    registered_model = dict(
-        client.search_model_versions(f"name='{model_name}'")[0]
+    # 5. Test model promotion
+    mlflow_utils.promote_model(model_uri, model_register_name, model_alias)
+
+    # Check the latest version of the registered model
+    latest_versions = client.get_latest_versions(model_register_name)
+    assert len(latest_versions) == 1
+    latest_version = latest_versions[0].version
+    model_version_details = client.get_model_version(
+        model_register_name, latest_version
     )
-    assert registered_model["name"] == model_name
-    assert int(registered_model["version"]) >= 1
-    assert registered_model["status"] == "READY"
+    # Check if the alias exists
+    assert (
+        model_alias in model_version_details.aliases
+    ), f"Alias '{model_alias}' not found for model {model_register_name}."
