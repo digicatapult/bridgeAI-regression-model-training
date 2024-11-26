@@ -1,3 +1,6 @@
+"""MLFlow utility functions."""
+
+import time
 from types import SimpleNamespace
 
 import mlflow
@@ -7,6 +10,7 @@ import pandas as pd
 import toml
 import torch
 from mlflow.models.signature import infer_signature
+from mlflow.tracking import MlflowClient
 
 from src.preprocess import schema
 from src.servable_model import ServableModel
@@ -119,3 +123,49 @@ def get_conda_env(toml_path: str = "./pyproject.toml") -> dict:
     conda_env = mlflow.pyfunc.get_default_conda_env()
     conda_env["dependencies"][-1]["pip"].extend(dependencies)
     return conda_env
+
+
+def promote_model(model_uri, run_id, model_register_name, model_alias):
+    """Register model and add alias - for deployment."""
+    # Initialise MLflow client
+    client = MlflowClient()
+
+    # Register the model
+    model_version = client.create_model_version(
+        name=model_register_name, source=model_uri, run_id=run_id
+    )
+
+    # Wait until the model version is ready
+    model_version_number = model_version.version
+
+    status = None
+    while status != "READY":
+        model_version_details = client.get_model_version(
+            name=model_register_name, version=model_version_number
+        )
+        status = model_version_details.status
+        if status == "READY":
+            print(
+                f"Model version {model_register_name}-"
+                f"{model_version_number} is ready."
+            )
+            break
+        elif status == "FAILED_REGISTRATION":
+            raise Exception(
+                f"Model {model_register_name} - "
+                f"failed to register new version."
+            )
+        else:
+            print(f"Current status: {status}. Waiting...")
+            time.sleep(5)
+
+    # Assign alias to this model version
+    client.set_registered_model_alias(
+        name=model_register_name,
+        alias=model_alias,
+        version=model_version_number,
+    )
+    print(
+        f"Alias '{model_alias}' set to model '{model_register_name}' "
+        f"version {model_version_number}."
+    )

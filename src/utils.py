@@ -62,7 +62,7 @@ def get_device(config):
             device = torch.device("cuda")
         else:
             device = torch.device("cpu")
-            logger.warn("Falling back to 'CPU'; no usable 'GPU' found!")
+            logger.warning("Falling back to 'CPU'; no usable 'GPU' found!")
     else:
         device = torch.device("cpu")
     return device
