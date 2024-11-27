@@ -187,7 +187,12 @@ def train_model(config):
     # register and add alias if deploy-as-code enabled
     deploy_as_code = os.getenv(
         "DEPLOY_AS_CODE", config["mlflow"]["deploy_as_code"]
+    ).lower() in (
+        "true",
+        "1",
+        "t",
     )
+
     if deploy_as_code:
         model_register_name = os.getenv(
             "DEPLOY_MODEL_NAME", config["mlflow"]["model_register_name"]
