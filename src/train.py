@@ -105,6 +105,7 @@ def train(
         mlflow.active_run(), model_save_path, config
     )
     logger.info(f"Model logged to MLFlow with uri - {model_uri}")
+    return model_uri
 
 
 def train_model(config):
