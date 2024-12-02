@@ -25,18 +25,21 @@ or in the environment variable `DATA_PATH`
 
 The following environment variables can be set to configure the training:
 
-| Variable               | Default Value                 | Description                                                                                                   |
-|------------------------|-------------------------------|---------------------------------------------------------------------------------------------------------------|
-| DATA_PATH              | `./artefacts/HousingData.csv` | File path to the raw data CSV data used for training                                                          |
-| CONFIG_PATH            | `./config.yaml`               | File path to the model training and other configuration file                                                  |
-| LOG_LEVEL              | `INFO`                        | The logging level for the application. Valid values are `DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`.  |
-| MLFLOW_TRACKING_URI    | `http://localhost:5000`       | MLFlow tracking URI. Use `http://host.docker.internal:5000` if the MLFlow is running within docker container. |
-| GITHUB_USERNAME        | None                          | Githuib username. This is needed to pull the data form the dvc repo.                                          |
-| GITHUB_PASSWORD        | None                          | Githuib token. This is needed to pull the data form the dvc repo.                                             |
-| DVC_REMOTE             | `s3://artifacts`              | Dvc remote                                                                                                    |
-| DVC_REMOTE_NAME        | `regression-model-remote`     | Dvc remote name.                                                                                              |
-| DVC_ACCESS_KEY_ID      | None                          | Access key id for dvc remote.                                                                                 |
-| DVC_SECRET_ACCESS_KEY  | None                          | secret access key for dvc remote.                                                                             |
+| Variable              | Default Value                 | Description                                                                                                   |
+|-----------------------|-------------------------------|---------------------------------------------------------------------------------------------------------------|
+| DATA_PATH             | `./artefacts/HousingData.csv` | File path to the raw data CSV data used for training                                                          |
+| CONFIG_PATH           | `./config.yaml`               | File path to the model training and other configuration file                                                  |
+| LOG_LEVEL             | `INFO`                        | The logging level for the application. Valid values are `DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`.  |
+| MLFLOW_TRACKING_URI   | `http://localhost:5000`       | MLFlow tracking URI. Use `http://host.docker.internal:5000` if the MLFlow is running within docker container. |
+| GITHUB_USERNAME       | None                          | Githuib username. This is needed to pull the data form the dvc repo.                                          |
+| GITHUB_PASSWORD       | None                          | Githuib token. This is needed to pull the data form the dvc repo.                                             |
+| DVC_REMOTE            | `s3://artifacts`              | Dvc remote                                                                                                    |
+| DVC_REMOTE_NAME       | `regression-model-remote`     | Dvc remote name.                                                                                              |
+| DVC_ACCESS_KEY_ID     | None                          | Access key id for dvc remote.                                                                                 |
+| DVC_SECRET_ACCESS_KEY | None                          | secret access key for dvc remote.                                                                             |
+| DEPLOY_AS_CODE        | False                         | Should manual intervention or evaluation is needed to register the trained model or not.                      |
+| DEPLOY_MODEL_NAME     | `house_price_prediction`      | The name with which the model will be registered. This name and alias will be used for deployment.            |
+| DEPLOY_MODEL_ALIAS    | `champion`                    | The alias to be added to the model. This alias along with the name will be used for deployment.               |
 
 
 ### Running the tests

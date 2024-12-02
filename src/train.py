@@ -100,11 +100,12 @@ def train(
         f"Val Loss: {val_loss: .4f}"
     )
 
-    # Register the model in the MLFlow registry
+    # Log the model to the MLFlow registry
     model_uri = mlflow_utils.log_torch_model(
         mlflow.active_run(), model_save_path, config
     )
-    logger.info(f"Model registered in MLFlow. uri - {model_uri}")
+    logger.info(f"Model logged to MLFlow with uri - {model_uri}")
+    return model_uri
 
 
 def train_model(config):
@@ -156,7 +157,7 @@ def train_model(config):
     try:
         # Set the active run to the previously started run
         with mlflow.start_run(run_id=run_id, nested=True):
-            train(
+            model_uri = train(
                 regression_model,
                 train_dataloader,
                 val_dataloader,
@@ -183,6 +184,24 @@ def train_model(config):
             json.dump(xcom_json, f)
 
     logger.info(f"Experiment has been logged to MLFlow with run_id: {run_id}")
+
+    # register and add alias if deploy-as-code enabled
+    deploy_as_code = os.getenv(
+        "DEPLOY_AS_CODE", config["mlflow"]["deploy_as_code"]
+    ).lower() in (
+        "true",
+        "1",
+        "t",
+    )
+
+    if deploy_as_code:
+        model_register_name = os.getenv(
+            "DEPLOY_MODEL_NAME", config["mlflow"]["model_register_name"]
+        )
+        model_alias = os.getenv(
+            "DEPLOY_MODEL_ALIAS", config["mlflow"]["model_alias"]
+        )
+        mlflow_utils.promote_model(model_uri, model_register_name, model_alias)
 
     return run_id
 
