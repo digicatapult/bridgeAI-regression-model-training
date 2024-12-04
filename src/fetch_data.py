@@ -100,7 +100,8 @@ def dvc_remote_add(config):
             # only when a valid secret access key is present
             logger.warning(
                 "AWS credentials `dvc_secret_access_key` is missing "
-                "in the Airflow connection."
+                "in the Airflow connection.\n"
+                "Falling back to IAM based s3 authentication."
             )
         else:
             dvc_main(
@@ -144,12 +145,23 @@ def move_dvc_data(config):
 
     # Now move the data
     try:
-        shutil.move(config["dvc"]["train_data_path"], destination)
-        shutil.move(config["dvc"]["test_data_path"], destination)
-        shutil.move(config["dvc"]["val_data_path"], destination)
+        safe_move(config["dvc"]["train_data_path"], destination)
+        safe_move(config["dvc"]["test_data_path"], destination)
+        safe_move(config["dvc"]["val_data_path"], destination)
     except Exception as e:
         logger.error(f"Copying dvc data failed with error {e}")
         raise e
+
+
+def safe_move(src, dst):
+    """Safely move file from source to destination.
+
+    This is to deal with `OSError: Invalid cross-device link` when
+    one is on a local disk and the other is on an external disk
+    or a network-mounted volume).
+    """
+    shutil.copy(src, dst)
+    os.remove(src)
 
 
 def fetch_data(config):
