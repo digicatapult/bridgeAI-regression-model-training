@@ -60,10 +60,12 @@ def dvc_pull(config):
     delete_file_if_exists(config["dvc"]["train_data_path"])
     delete_file_if_exists(config["dvc"]["test_data_path"])
     delete_file_if_exists(config["dvc"]["val_data_path"])
-    dvc_remote = os.getenv("DVC_REMOTE", config["dvc"]["dvc_remote"])
+    dvc_remote_name = os.getenv(
+        "DVC_REMOTE_NAME", config["dvc"]["dvc_remote_name"]
+    )
     try:
         dvc_remote_add(config)
-        dvc_main(["pull", "-r", dvc_remote])
+        dvc_main(["pull", "-r", dvc_remote_name])
     except Exception as e:
         logger.error(f"DVC pull failed with error: {e}")
         raise e
