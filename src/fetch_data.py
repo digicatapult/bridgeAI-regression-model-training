@@ -72,12 +72,15 @@ def dvc_remote_add(config):
     """Set the dvc remote."""
     access_key_id = os.getenv("DVC_ACCESS_KEY_ID")
     secret_access_key = os.getenv("DVC_SECRET_ACCESS_KEY")
-    region = config["dvc"]["dvc_region"]
+    region = os.getenv("AWS_DEFAULT_REGION")
     try:
         dvc_remote_name = os.getenv(
-            "DVC_REMOTE_NAME", config["dvc"]["dvc_remote_name"]
+            "DVC_REMOTE_NAME", config["dvc_remote_name"]
         )
-        dvc_remote = os.getenv("DVC_REMOTE", config["dvc"]["dvc_remote"])
+        dvc_remote = os.getenv("DVC_REMOTE", config["dvc_remote"])
+        dvc_endpoint_url = os.getenv(
+            "DVC_ENDPOINT_URL", config["dvc_endpoint_url"]
+        )
 
         dvc_main(["remote", "add", "-f", dvc_remote_name, dvc_remote])
         dvc_main(
@@ -86,27 +89,35 @@ def dvc_remote_add(config):
                 "modify",
                 dvc_remote_name,
                 "endpointurl",
-                config["dvc"]["dvc_endpoint_url"],
+                dvc_endpoint_url,
             ]
         )
-        dvc_main(
-            [
-                "remote",
-                "modify",
-                dvc_remote_name,
-                "access_key_id",
-                access_key_id,
-            ]
-        )
-        dvc_main(
-            [
-                "remote",
-                "modify",
-                dvc_remote_name,
-                "secret_access_key",
-                secret_access_key,
-            ]
-        )
+        if secret_access_key is None or secret_access_key == "":
+            # Set dvc remote credentials
+            # only when a valid secret access key is present
+            logger.warning(
+                "AWS credentials `dvc_secret_access_key` is missing "
+                "in the Airflow connection."
+            )
+        else:
+            dvc_main(
+                [
+                    "remote",
+                    "modify",
+                    dvc_remote_name,
+                    "access_key_id",
+                    access_key_id,
+                ]
+            )
+            dvc_main(
+                [
+                    "remote",
+                    "modify",
+                    dvc_remote_name,
+                    "secret_access_key",
+                    secret_access_key,
+                ]
+            )
         # Minio does not enforce regions but DVC requires it
         dvc_main(["remote", "modify", dvc_remote_name, "region", region])
     except Exception as e:
