@@ -60,9 +60,10 @@ def dvc_pull(config):
     delete_file_if_exists(config["dvc"]["train_data_path"])
     delete_file_if_exists(config["dvc"]["test_data_path"])
     delete_file_if_exists(config["dvc"]["val_data_path"])
+    dvc_remote = os.getenv("DVC_REMOTE", config["dvc"]["dvc_remote"])
     try:
         dvc_remote_add(config)
-        dvc_main(["pull", "-r", config["dvc"]["dvc_remote_name"]])
+        dvc_main(["pull", "-r", dvc_remote])
     except Exception as e:
         logger.error(f"DVC pull failed with error: {e}")
         raise e
@@ -75,11 +76,11 @@ def dvc_remote_add(config):
     region = os.getenv("AWS_DEFAULT_REGION")
     try:
         dvc_remote_name = os.getenv(
-            "DVC_REMOTE_NAME", config["dvc_remote_name"]
+            "DVC_REMOTE_NAME", config["dvc"]["dvc_remote_name"]
         )
-        dvc_remote = os.getenv("DVC_REMOTE", config["dvc_remote"])
+        dvc_remote = os.getenv("DVC_REMOTE", config["dvc"]["dvc_remote"])
         dvc_endpoint_url = os.getenv(
-            "DVC_ENDPOINT_URL", config["dvc_endpoint_url"]
+            "DVC_ENDPOINT_URL", config["dvc"]["dvc_endpoint_url"]
         )
 
         dvc_main(["remote", "add", "-f", dvc_remote_name, dvc_remote])
