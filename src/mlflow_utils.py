@@ -75,9 +75,10 @@ def log_torch_model(
         sample_output = model.predict(context=context, model_input=sample_data)
     signature = infer_signature(sample_data, sample_output)
 
-    # Log the PyTorch model with dependancies
+    # Log the PyTorch model with dependencies
+    artifact_path = config["model"]["model_name"]
     mlflow.pyfunc.log_model(
-        artifact_path="custom_pytorch_model",
+        artifact_path=artifact_path,
         python_model=ServableModel(device),
         artifacts={
             "torch_model": str(model_save_path),
@@ -88,7 +89,7 @@ def log_torch_model(
         infer_code_paths=False,
         code_paths=["./src"],
     )
-    model_uri = f"runs:/{run.info.run_id}/{config['model']['model_name']}"
+    model_uri = f"runs:/{run.info.run_id}/{artifact_path}"
     return model_uri
 
 
@@ -115,7 +116,7 @@ def get_conda_env(toml_path: str = "./pyproject.toml") -> dict:
     dependencies.pop("python", None)
     dependencies.pop("mlflow", None)
 
-    # Convert the gathered dependancies into proper foramt
+    # Convert the gathered dependencies into proper format
     dependencies = [
         f"{pkg}>={ver.lstrip('^')}" for pkg, ver in dependencies.items()
     ]
@@ -141,7 +142,7 @@ def promote_model(model_uri, model_register_name, model_alias):
         status = model_version_details.status
         if status == "READY":
             break
-        time.sleep(1)
+        time.sleep(5)
 
     # Wait until the model version is ready
     model_version_number = result.version
@@ -173,6 +174,7 @@ def promote_model(model_uri, model_register_name, model_alias):
         alias=model_alias,
         version=model_version_number,
     )
+
     print(
         f"Alias '{model_alias}' set to model '{model_register_name}' "
         f"version {model_version_number}."
