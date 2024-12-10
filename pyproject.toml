@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "bridgeai-regression-model-training"
-version = "0.6.3"
+version = "0.6.4"
 description = "A basic containerised regression model training setup"
 authors = ["DC AI Team <opensource@digicatapult.org.uk>"]
 readme = "README.md"
